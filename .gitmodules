@@ -1,0 +1,3 @@
+[submodule "image_processing_core"]
+	path = image_processing_core
+	url = git@github.com:h-alice/image-processing-core.git
