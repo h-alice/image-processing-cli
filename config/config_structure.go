@@ -68,10 +68,8 @@ type CropConfig struct {
 //
 // Output: Output file configuration.
 type ProcessProfileConfig struct {
-	ProfileName string        `yaml:"profileName"` // Profile identifier
-	ICC         string        `yaml:"icc"`         // ICC profile to embed
-	Resize      *ResizeConfig `yaml:"resize"`      // Resize option
-	Output      *OutputConfig `yaml:"output"`      // Output file configuration
+	ProfileName    string          `yaml:"profileName"`    // Profile identifier
+	PipelineBlocks []PipelineBlock `yaml:"pipelineBlocks"` // Pipeline blocks
 }
 
 // Currently not used.
