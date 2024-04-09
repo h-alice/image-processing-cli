@@ -6,12 +6,33 @@ import (
 
 func TestLoadConfig(t *testing.T) {
 
-	config, err := LoadConfigFromFile("test_resources/test1.yaml")
+	config, err := LoadConfigFromFile("test_resources/test_full_conf.yaml")
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
 
-	t.Logf("Config: %#v", config)
+	for _, pf := range config.Profiles {
+		t.Logf("Profile: %s", pf.ProfileName)
+		for _, pb := range pf.PipelineBlocks {
+			t.Logf("Operation: %s", pb.Operation)
+			if pb.Operation == "resize" {
+				t.Logf("Resize: %v", pb.Resize)
+			}
+			if pb.Operation == "write" {
+				t.Logf("Write: %v", pb.Write)
+			}
+			if pb.Operation == "icc_embed" {
+				t.Logf("ICC: %v", pb.ICCEmbedProfile)
+			}
+			if pb.Operation == "encode" {
+				t.Logf("Encode: %v", pb.Encode)
+			}
+			if pb.Operation == "crop" {
+				t.Logf("Crop: %v", pb.Crop)
+			}
+
+		}
+	}
 }
 
 /*

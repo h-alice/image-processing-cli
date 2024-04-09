@@ -1,9 +1,14 @@
 package config
 
 import (
+	"errors"
 	"os"
 
 	"gopkg.in/yaml.v2"
+)
+
+var (
+	ErrInvalidPipelineBlock = errors.New("malfomed pipeline block")
 )
 
 /*
@@ -31,6 +36,48 @@ func (ocf OutputConfig) GenerateFileName(input_name string) string {
 }
 */
 
+func checkPipelineBlock(pb_list []PipelineBlock) error {
+
+	for _, pb := range pb_list {
+
+		if pb.Operation == "" {
+			return ErrInvalidPipelineBlock
+		}
+
+		if pb.Operation == "resize" {
+			if pb.Resize == nil {
+				return ErrInvalidPipelineBlock
+			}
+		}
+
+		if pb.Operation == "encode" {
+			if pb.Encode == nil {
+				return ErrInvalidPipelineBlock
+			}
+		}
+
+		if pb.Operation == "crop" {
+			if pb.Crop == nil {
+				return ErrInvalidPipelineBlock
+			}
+		}
+
+		if pb.Operation == "write" {
+			if pb.Write == nil {
+				return ErrInvalidPipelineBlock
+			}
+		}
+
+		if pb.Operation == "icc_embed" {
+			if pb.ICCEmbedProfile == nil {
+				return ErrInvalidPipelineBlock
+			}
+		}
+	}
+
+	return nil
+}
+
 // Load config file from path.
 //
 // config_path: Path to config file.
@@ -45,6 +92,16 @@ func LoadConfigFromFile(config_path string) (*ConfigFileRoot, error) {
 	err = yaml.Unmarshal(raw_config, &conf) // Convert JSON to structure.
 	if err != nil {
 		return nil, err
+	}
+
+	// Iterate through profiles.
+	for _, profile := range conf.Profiles {
+
+		// Check pipeline blocks.
+		err = checkPipelineBlock(profile.PipelineBlocks)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &conf, nil
