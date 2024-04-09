@@ -40,7 +40,6 @@ func LoadConfigFromFile(config_path string) (*ConfigFileRoot, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	// Converting JSON to config structure.
 	var conf ConfigFileRoot                 // Parsed config placeholder.
 	err = yaml.Unmarshal(raw_config, &conf) // Convert JSON to structure.
