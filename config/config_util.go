@@ -2,12 +2,11 @@ package config
 
 import (
 	"os"
-	"path/filepath"
-	"strings"
 
 	"gopkg.in/yaml.v2"
 )
 
+/*
 // Generate output file name.
 func (ocf OutputConfig) GenerateFileName(input_name string) string {
 
@@ -30,6 +29,7 @@ func (ocf OutputConfig) GenerateFileName(input_name string) string {
 
 	return full_file
 }
+*/
 
 // Load config file from path.
 //
