@@ -45,6 +45,19 @@ type ResizeConfig struct {
 	Algorithm string  `yaml:"algorithm"` // Resize algorithm
 }
 
+// Config structure for cropping image.
+//
+// Alignment: Crop alignment. One of `center` or `topleft`.
+//
+// Width: Crop width.
+//
+// Height: Crop height.
+type CropConfig struct {
+	Alignment string `yaml:"alignment"` // Crop alignment
+	Width     int    `yaml:"width"`     // Crop width
+	Height    int    `yaml:"height"`    // Crop height
+}
+
 // Config structure for processing profile.
 //
 // ProfileName: Profile identifier.
@@ -64,6 +77,24 @@ type ProcessProfileConfig struct {
 // Currently not used.
 type OutputDirConfig struct {
 	DirName string `yaml:"dirName"` // Output directory name
+}
+
+// Operation block structure.
+//
+// Operation: Operation name.
+// NOTE: The operation type is one of the following:
+// - `crop`
+// - `resize`
+// - `embedprofile`
+// - `encode`
+// - `write`
+type PipelineBlock struct {
+	Operation    string           `yaml:"operation"`     // Operation name.
+	Crop         *CropConfig      `yaml:"crop_config"`   // Crop configuration.
+	Resize       *ResizeConfig    `yaml:"resize_config"` // Resize configuration.
+	EmbedProfile string           `yaml:"embed_profile"` // ICC profile to embed.
+	Encode       *OutputConfig    `yaml:"encode_config"` // Encode configuration.
+	Write        *OutputDirConfig `yaml:"write_config"`  // Write configuration.
 }
 
 // Config structure for config file.
