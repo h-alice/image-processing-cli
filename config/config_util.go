@@ -36,42 +36,52 @@ func (ocf OutputConfig) GenerateFileName(input_name string) string {
 }
 */
 
-func checkPipelineBlock(pb_list []PipelineBlock) error {
+// Check the integrity of pipeline block.
+//
+// pb: Pipeline block to check.
+// Each block must associate with a valid operation.
+// If the operation is `resize`, the block must have a valid `ResizeConfig`.
+//
+// Returns error if pipeline block is invalid.
+func checkPipelineBlock(pb PipelineBlock) error {
 
-	for _, pb := range pb_list {
-
-		if pb.Operation == "" {
+	switch pb.Operation {
+	case "resize":
+		if pb.Resize == nil {
 			return ErrInvalidPipelineBlock
 		}
-
-		if pb.Operation == "resize" {
-			if pb.Resize == nil {
-				return ErrInvalidPipelineBlock
-			}
+	case "encode":
+		if pb.Encode == nil {
+			return ErrInvalidPipelineBlock
 		}
-
-		if pb.Operation == "encode" {
-			if pb.Encode == nil {
-				return ErrInvalidPipelineBlock
-			}
+	case "crop":
+		if pb.Crop == nil {
+			return ErrInvalidPipelineBlock
 		}
-
-		if pb.Operation == "crop" {
-			if pb.Crop == nil {
-				return ErrInvalidPipelineBlock
-			}
+	case "write":
+		if pb.Write == nil {
+			return ErrInvalidPipelineBlock
 		}
-
-		if pb.Operation == "write" {
-			if pb.Write == nil {
-				return ErrInvalidPipelineBlock
-			}
+	case "icc_embed":
+		if pb.ICCEmbedProfile == nil {
+			return ErrInvalidPipelineBlock
 		}
+	default:
+		return ErrInvalidPipelineBlock
+	}
 
-		if pb.Operation == "icc_embed" {
-			if pb.ICCEmbedProfile == nil {
-				return ErrInvalidPipelineBlock
-			}
+	return nil
+}
+
+// Check the integrity of pipeline block list.
+//
+// pbs: List of pipeline blocks to check.
+func checkPipelineBlockList(pbs []PipelineBlock) error {
+
+	for _, pb := range pbs {
+		err := checkPipelineBlock(pb)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -98,7 +108,7 @@ func LoadConfigFromFile(config_path string) (*ConfigFileRoot, error) {
 	for _, profile := range conf.Profiles {
 
 		// Check pipeline blocks.
-		err = checkPipelineBlock(profile.PipelineBlocks)
+		err = checkPipelineBlockList(profile.PipelineBlocks)
 		if err != nil {
 			return nil, err
 		}
