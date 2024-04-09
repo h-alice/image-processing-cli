@@ -16,7 +16,8 @@ profiles: # This config test provides all available fields.
           height: 200
           factor: 0.9
       - operation: "icc_embed"
-        icc_name: "sRGB"
+        icc_config:
+          icc_name: "sRGB"
       - operation: "encode"
         encode_config:
           format: "jpeg"
