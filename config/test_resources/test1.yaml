@@ -1,0 +1,27 @@
+# A test file for the configuration parser.
+
+
+profiles: # This config test provides all available fields.
+  - profileName: "Profile1"
+    icc: "ADOBE RGB"
+    resize:
+      width: 100
+      height: 200
+      factor: 0.9
+      algorithm: "catmullrom"
+    output:
+      format: "jpeg"
+      nameSuffix: "_suffix1"
+      namePrefix: "prefix1_"
+      options:
+        quality: 80
+
+  - profileName: "Profile2" # This config test omit some fields.
+    icc: "DISPLAY P3"
+    resize:
+      algorithm: "nearestneighbor"
+    output:
+      format: "png"
+      nameSuffix: "_suffix2"
+      namePrefix: "prefix2_"
+      options:

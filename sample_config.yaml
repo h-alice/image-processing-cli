@@ -1,0 +1,20 @@
+# This is a sample configuration file for the image processing tool.
+# Change the values to suit your needs.
+
+# This is the full config, you can omit the fields to disable operations not needed.
+
+profiles:
+  - profileName: "Profile1" # Name of the profile.
+    icc: "DISPLAY P3" # One of the following: "SRGB", "DISPLAY P3", "DCI P3", "ADOBE RGB", "ROMM RGB"
+    resize:
+      algorithm: "catmullrom" # One of the following: "nearestneighbor", "catmullrom", "approxbiLinear"
+      factor: 0.9 # Resize factor.
+      width: 100  # Resize width. If `factor` is set, this is ignored.
+      height: 200 # Resize height. If `factor` or `width` is set, this is ignored.
+    output:
+      format: "jpeg" # One of the following: "jpeg" ("jpg"), "png"
+      nameSuffix: "_suffix1"  # Suffix to append to the output file name.
+      namePrefix: "prefix1_"  # Prefix to append to the output file name.
+      options:
+        quality: 80 # JPEG quality. Not used for PNG.
+
