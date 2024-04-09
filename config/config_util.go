@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,6 +51,7 @@ func LoadConfigFromFile(config_path string) (*ConfigFileRoot, error) {
 	return &conf, nil
 }
 
+/*
 // Pretty print config file.
 func (pf ConfigFileRoot) PrettyPrint() string {
 
@@ -125,3 +125,4 @@ func GenerateDefaultConfig() string {
 
 	return default_config.ToYaml()
 }
+*/

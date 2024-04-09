@@ -21,10 +21,10 @@ type OutputOptionConfig op.EncoderOption
 //
 // Options: Encoder option. For jpeg use and supports only `Quality` option.
 type OutputConfig struct {
-	Format     string              `yaml:"format"`     // Output file format
-	NameSuffix string              `yaml:"nameSuffix"` // Output file name suffix
-	NamePrefix string              `yaml:"namePrefix"` // Output file name prefix
-	Options    *OutputOptionConfig `yaml:"options"`    // Encoder option
+	Format     string              `yaml:"format"`  // Output file format
+	NameSuffix string              `yaml:"suffix"`  // Output file name suffix
+	NamePrefix string              `yaml:"prefix"`  // Output file name prefix
+	Options    *OutputOptionConfig `yaml:"options"` // Encoder option
 }
 
 // Config structure for resizing image.
@@ -43,6 +43,10 @@ type ResizeConfig struct {
 	Height    int     `yaml:"height"`    // Output image height
 	Factor    float32 `yaml:"factor"`    // Resize factor
 	Algorithm string  `yaml:"algorithm"` // Resize algorithm
+}
+
+type IccEmbedConfig struct {
+	ProfileName string `yaml:"icc_name"` // Profile name
 }
 
 // Config structure for cropping image.
@@ -68,8 +72,8 @@ type CropConfig struct {
 //
 // Output: Output file configuration.
 type ProcessProfileConfig struct {
-	ProfileName    string          `yaml:"profileName"`    // Profile identifier
-	PipelineBlocks []PipelineBlock `yaml:"pipelineBlocks"` // Pipeline blocks
+	ProfileName    string          `yaml:"profile_name"` // Profile identifier
+	PipelineBlocks []PipelineBlock `yaml:"pipeline"`     // Pipeline blocks
 }
 
 // Currently not used.
@@ -83,14 +87,14 @@ type OutputDirConfig struct {
 // NOTE: The operation type is one of the following:
 // - `crop`
 // - `resize`
-// - `embedprofile`
+// - `icc_embed`
 // - `encode`
 // - `write`
 type PipelineBlock struct {
 	Operation    string           `yaml:"operation"`     // Operation name.
 	Crop         *CropConfig      `yaml:"crop_config"`   // Crop configuration.
 	Resize       *ResizeConfig    `yaml:"resize_config"` // Resize configuration.
-	EmbedProfile string           `yaml:"embed_profile"` // ICC profile to embed.
+	EmbedProfile *IccEmbedConfig  `yaml:"icc_config"`    // Embed profile configuration.
 	Encode       *OutputConfig    `yaml:"encode_config"` // Encode configuration.
 	Write        *OutputDirConfig `yaml:"write_config"`  // Write configuration.
 }

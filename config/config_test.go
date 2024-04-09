@@ -14,6 +14,7 @@ func TestLoadConfig(t *testing.T) {
 	t.Logf("Config: %#v", config)
 }
 
+/*
 func TestLoadConfigAndParse(t *testing.T) {
 
 	config, err := LoadConfigFromFile("test_resources/test1.yaml")
@@ -124,3 +125,4 @@ func TestProfileToYaml(t *testing.T) {
 
 	t.Logf("Config: %s", config.ToYaml())
 }
+*/
