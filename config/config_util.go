@@ -123,6 +123,18 @@ func LoadConfigFromFile(config_path string) (*ConfigFileRoot, error) {
 	return &conf, nil
 }
 
+// Profile instance to yaml string.
+func (profile_root ConfigFileRoot) ToYaml() string {
+
+	// Convert to yaml.
+	yaml_str, err := yaml.Marshal(profile_root)
+	if err != nil {
+		return ""
+	}
+
+	return string(yaml_str)
+}
+
 /*
 // Pretty print config file.
 func (pf ConfigFileRoot) PrettyPrint() string {
@@ -158,17 +170,6 @@ func (pf ConfigFileRoot) PrettyPrint() string {
 	return output
 }
 
-// Profile instance to yaml string.
-func (profile_root ConfigFileRoot) ToYaml() string {
-
-	// Convert to yaml.
-	yaml_str, err := yaml.Marshal(profile_root)
-	if err != nil {
-		return ""
-	}
-
-	return string(yaml_str)
-}
 
 // Generate a config that does nothing to input image.
 func GenerateDefaultConfig() string {
