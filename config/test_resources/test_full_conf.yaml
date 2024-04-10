@@ -2,7 +2,7 @@
 
 
 profiles: # This config test provides all available fields.
-  - profileName: "Profile1"
+  - profile_name: "Profile1"
     pipeline:
       - operation: "crop"
         crop_config:
