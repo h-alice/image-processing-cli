@@ -95,12 +95,12 @@ type OutputDirConfig struct {
 // - `encode`
 // - `write`
 type PipelineBlock struct {
-	Operation       string          `yaml:"operation"`     // Operation name.
-	Crop            *CropConfig     `yaml:"crop_config"`   // Crop configuration.
-	Resize          *ResizeConfig   `yaml:"resize_config"` // Resize configuration.
-	ICCEmbedProfile *IccEmbedConfig `yaml:"icc_config"`    // Embed profile configuration.
-	Encode          *EncodeConfig   `yaml:"encode_config"` // Encode configuration.
-	Write           *OutputConfig   `yaml:"write_config"`  // Write configuration.
+	Operation       string          `yaml:"operation"`               // Operation name.
+	Crop            *CropConfig     `yaml:"crop_config,omitempty"`   // Crop configuration.
+	Resize          *ResizeConfig   `yaml:"resize_config,omitempty"` // Resize configuration.
+	ICCEmbedProfile *IccEmbedConfig `yaml:"icc_config,omitempty"`    // Embed profile configuration.
+	Encode          *EncodeConfig   `yaml:"encode_config,omitempty"` // Encode configuration.
+	Write           *OutputConfig   `yaml:"write_config,omitempty"`  // Write configuration.
 }
 
 // Config structure for config file.

@@ -35,6 +35,16 @@ func TestLoadConfig(t *testing.T) {
 	}
 }
 
+func TestProfileToYaml(t *testing.T) {
+
+	config, err := LoadConfigFromFile("test_resources/test_full_conf.yaml")
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+
+	t.Logf("Config: %s", config.ToYaml())
+}
+
 /*
 func TestLoadConfigAndParse(t *testing.T) {
 
@@ -137,13 +147,5 @@ func TestPrettyPrint(t *testing.T) {
 	t.Logf("Config: %s", config.PrettyPrint())
 }
 
-func TestProfileToYaml(t *testing.T) {
 
-	config, err := LoadConfigFromFile("test_resources/test1.yaml")
-	if err != nil {
-		t.Fatalf("Failed to load config: %v", err)
-	}
-
-	t.Logf("Config: %s", config.ToYaml())
-}
 */
