@@ -8,7 +8,13 @@ import (
 )
 
 var (
-	ErrInvalidPipelineBlock = errors.New("malfomed pipeline block")
+	ErrInvalidPipelineBlock     = errors.New("malfomed pipeline block")
+	ErrInvalidPipelineBlockType = errors.New("unsupported pipeline block type in config")
+	ErrInvalidResizeBlock       = errors.New("resize block provided but no additional configuration")
+	ErrInvalidCropBlock         = errors.New("crop block provided but no additional configuration")
+	ErrInvalidEncodeBlock       = errors.New("encode block provided but no additional configuration")
+	ErrInvalidWriteBlock        = errors.New("file output block provided but no additional configuration")
+	ErrInvalidIccBlock          = errors.New("icc embedding block provided but no additional configuration")
 )
 
 /*
@@ -48,26 +54,26 @@ func checkPipelineBlock(pb PipelineBlock) error {
 	switch pb.Operation {
 	case "resize":
 		if pb.Resize == nil {
-			return ErrInvalidPipelineBlock
+			return ErrInvalidResizeBlock
 		}
 	case "encode":
 		if pb.Encode == nil {
-			return ErrInvalidPipelineBlock
+			return ErrInvalidEncodeBlock
 		}
 	case "crop":
 		if pb.Crop == nil {
-			return ErrInvalidPipelineBlock
+			return ErrInvalidCropBlock
 		}
 	case "write":
 		if pb.Write == nil {
-			return ErrInvalidPipelineBlock
+			return ErrInvalidWriteBlock
 		}
 	case "icc_embed":
 		if pb.ICCEmbedProfile == nil {
-			return ErrInvalidPipelineBlock
+			return ErrInvalidIccBlock
 		}
 	default:
-		return ErrInvalidPipelineBlock
+		return ErrInvalidPipelineBlockType
 	}
 
 	return nil
