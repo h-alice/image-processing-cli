@@ -3,6 +3,8 @@ package config
 import (
 	"errors"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -17,12 +19,11 @@ var (
 	ErrInvalidIccBlock          = errors.New("icc embedding block provided but no additional configuration")
 )
 
-/*
 // Generate output file name.
-func (ocf OutputConfig) GenerateFileName(input_name string) string {
+func (ocf OutputConfig) GenerateFileName() string {
 
-	original_ext := filepath.Ext(input_name)                     // Get file extension.
-	original_name := filepath.Base(input_name)                   // Get file name.
+	original_ext := filepath.Ext(ocf.fileName)                   // Get file extension.
+	original_name := filepath.Base(ocf.fileName)                 // Get file name.
 	stem := original_name[:len(original_name)-len(original_ext)] // Get file name w/o extension.
 
 	fileSuffix := ""
@@ -31,7 +32,9 @@ func (ocf OutputConfig) GenerateFileName(input_name string) string {
 	case "jpeg":
 		fileSuffix = ".jpg" // Use JPG instead of JPEG.
 	case "":
-		fileSuffix = original_ext // Output format not specified: keep original extension.
+		// Output format not specified: keep original extension.
+		// NOTE: It's not guanteed that the original extension matches the output format.
+		fileSuffix = original_ext
 	default:
 		fileSuffix = "." + ocf.Format // Use specified output format.
 
@@ -40,7 +43,6 @@ func (ocf OutputConfig) GenerateFileName(input_name string) string {
 
 	return full_file
 }
-*/
 
 // Check the integrity of pipeline block.
 //
@@ -136,6 +138,22 @@ func (profile_root ConfigFileRoot) ToYaml() string {
 	}
 
 	return string(yaml_str)
+}
+
+// Assign input file to current config.
+//
+// This is a temporary solution to the issue which "write" block cannot get original input file name.
+// With this helper function, all pipeline block can have similar signature.
+// TODO: Find another solution ;)
+func (profile_root *ConfigFileRoot) AssignInputFile(input_file string) {
+
+	for _, profile := range profile_root.Profiles {
+		for _, pb := range profile.PipelineBlocks {
+			if pb.Operation == "write" {
+				pb.Write.fileName = input_file
+			}
+		}
+	}
 }
 
 // Generate a config that does nothing to input image.
