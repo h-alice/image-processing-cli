@@ -6,6 +6,17 @@ import (
 	op "imagecore/operation" // Grab `EncoderOption` from operation package.
 )
 
+// Constants
+const (
+	OperationDecode   = "decode"    // Block signature for decoding image, should be the first block in the pipeline.
+	OperationCrop     = "crop"      // Block signature for cropping image.
+	OperationResize   = "resize"    // Block signature for resizing image.
+	OperationIccEmbed = "icc_embed" // Block signature for embedding ICC profile.
+	OperationEncode   = "encode"    // Block signature for encoding image.
+	OperationWrite    = "write"     // Block signature for writing image to file.
+)
+
+// Errors
 var ErrNotImplemented = errors.New("operation not implemented")
 
 // OutputOptionConfig structure for output file.

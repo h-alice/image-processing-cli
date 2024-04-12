@@ -12,13 +12,13 @@ func PipelineBlockToOperation(pb PipelineBlock) op.Operation {
 	// Therefore we don't return error here.
 	switch pb.Operation {
 
-	case "decode":
+	case OperationDecode:
 		return op.Decode()
 
 		// - `icc_embed`
 
 		// - `write`
-	case "resize":
+	case OperationResize: // Resize block.
 		if pb.Resize.Factor != 0.0 {
 			return op.ResizeImageByFactor(pb.Resize.Algorithm, pb.Resize.Factor)
 		} else if pb.Resize.Width != 0 {
@@ -29,16 +29,16 @@ func PipelineBlockToOperation(pb PipelineBlock) op.Operation {
 			return nil // This should not happen, since the config has been checked.
 		}
 
-	case "crop":
+	case OperationCrop: // Crop block.
 		return op.Crop(pb.Crop.Width, pb.Crop.Height, pb.Crop.Alignment)
 
-	case "encode":
+	case OperationEncode: // Encode block.
 		return op.Encode(pb.Encode.Format, (*op.EncoderOption)(pb.Encode.Options))
 
-	case "icc_embed":
+	case OperationIccEmbed: // ICC embedding block.
 		return op.EmbedProfile(pb.ICCEmbedProfile.ProfileName)
 
-	case "write":
+	case OperationWrite: // File output block.
 		return op.WriteImageToFile(pb.Write.GenerateFileName())
 	default:
 		return nil // This should not happen, since the config has been checked.

@@ -54,26 +54,26 @@ func (ocf OutputConfig) GenerateFileName() string {
 func checkPipelineBlock(pb PipelineBlock) error {
 
 	switch pb.Operation {
-	case "decode":
+	case OperationDecode: // Decode block.
 		// Decode operation does not require additional configuration.
 		break
-	case "resize":
+	case OperationResize: // Resize block.
 		if pb.Resize == nil {
 			return ErrInvalidResizeBlock
 		}
-	case "encode":
-		if pb.Encode == nil {
+	case OperationEncode:
+		if pb.Encode == nil { // Encode block.
 			return ErrInvalidEncodeBlock
 		}
-	case "crop":
+	case OperationCrop: // Crop block.
 		if pb.Crop == nil {
 			return ErrInvalidCropBlock
 		}
-	case "write":
+	case OperationWrite: // File output block.
 		if pb.Write == nil {
 			return ErrInvalidWriteBlock
 		}
-	case "icc_embed":
+	case OperationIccEmbed: // ICC embedding block.
 		if pb.ICCEmbedProfile == nil {
 			return ErrInvalidIccBlock
 		}
@@ -149,7 +149,7 @@ func (profile_root *ConfigFileRoot) AssignInputFile(input_file string) {
 
 	for _, profile := range profile_root.Profiles {
 		for _, pb := range profile.PipelineBlocks {
-			if pb.Operation == "write" {
+			if pb.Operation == OperationWrite {
 				pb.Write.fileName = input_file
 			}
 		}
@@ -166,16 +166,16 @@ func GenerateDefaultConfig() ConfigFileRoot {
 				ProfileName: "SampleProfile",
 				PipelineBlocks: []PipelineBlock{
 					{
-						Operation: "decode",
+						Operation: OperationDecode,
 					},
 					{
-						Operation: "encode",
+						Operation: OperationEncode,
 						Encode: &EncodeConfig{
 							Format: "jpeg",
 						},
 					},
 					{
-						Operation: "write",
+						Operation: OperationWrite,
 						Write: &OutputConfig{
 							NameSuffix: "_output",
 						},
