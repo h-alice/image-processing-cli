@@ -25,6 +25,7 @@ profiles: # This config test provides all available fields.
             quality: 80
       - operation: "write"
         write_config:
+          format: "jpeg"
           suffix: "_suffix1"
           prefix: "prefix1_"
 
