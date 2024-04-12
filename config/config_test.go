@@ -15,19 +15,19 @@ func TestLoadConfig(t *testing.T) {
 		t.Logf("Profile: %s", pf.ProfileName)
 		for _, pb := range pf.PipelineBlocks {
 			t.Logf("Operation: %s", pb.Operation)
-			if pb.Operation == "resize" {
+			if pb.Operation == OperationResize {
 				t.Logf("Resize: %v", pb.Resize)
 			}
-			if pb.Operation == "write" {
+			if pb.Operation == OperationWrite {
 				t.Logf("Write: %v", pb.Write)
 			}
-			if pb.Operation == "icc_embed" {
+			if pb.Operation == OperationIccEmbed {
 				t.Logf("ICC: %v", pb.ICCEmbedProfile)
 			}
-			if pb.Operation == "encode" {
+			if pb.Operation == OperationEncode {
 				t.Logf("Encode: %v", pb.Encode)
 			}
-			if pb.Operation == "crop" {
+			if pb.Operation == OperationCrop {
 				t.Logf("Crop: %v", pb.Crop)
 			}
 

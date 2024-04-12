@@ -15,9 +15,6 @@ func PipelineBlockToOperation(pb PipelineBlock) op.Operation {
 	case OperationDecode:
 		return op.Decode()
 
-		// - `icc_embed`
-
-		// - `write`
 	case OperationResize: // Resize block.
 		if pb.Resize.Factor != 0.0 {
 			return op.ResizeImageByFactor(pb.Resize.Algorithm, pb.Resize.Factor)
