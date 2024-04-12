@@ -1,7 +1,7 @@
 package config
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,11 +9,21 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Generate output file name.
-func (ocf OutputConfig) GenerateFileName(input_name string) string {
+var (
+	ErrInvalidPipelineBlock     = errors.New("malfomed pipeline block")
+	ErrInvalidPipelineBlockType = errors.New("unsupported pipeline block type in config")
+	ErrInvalidResizeBlock       = errors.New("resize block provided but no additional configuration")
+	ErrInvalidCropBlock         = errors.New("crop block provided but no additional configuration")
+	ErrInvalidEncodeBlock       = errors.New("encode block provided but no additional configuration")
+	ErrInvalidWriteBlock        = errors.New("file output block provided but no additional configuration")
+	ErrInvalidIccBlock          = errors.New("icc embedding block provided but no additional configuration")
+)
 
-	original_ext := filepath.Ext(input_name)                     // Get file extension.
-	original_name := filepath.Base(input_name)                   // Get file name.
+// Generate output file name.
+func (ocf OutputConfig) GenerateFileName() string {
+	original_dir := filepath.Dir(ocf.origFileName)               // Get original file directory.
+	original_ext := filepath.Ext(ocf.origFileName)               // Get file extension.
+	original_name := filepath.Base(ocf.origFileName)             // Get file name.
 	stem := original_name[:len(original_name)-len(original_ext)] // Get file name w/o extension.
 
 	fileSuffix := ""
@@ -22,14 +32,71 @@ func (ocf OutputConfig) GenerateFileName(input_name string) string {
 	case "jpeg":
 		fileSuffix = ".jpg" // Use JPG instead of JPEG.
 	case "":
-		fileSuffix = original_ext // Output format not specified: keep original extension.
+		// Output format not specified: keep original extension.
+		// NOTE: It's not guanteed that the original extension matches the output format.
+		fileSuffix = original_ext
 	default:
 		fileSuffix = "." + ocf.Format // Use specified output format.
 
 	}
 	full_file := ocf.NamePrefix + stem + ocf.NameSuffix + fileSuffix
 
-	return full_file
+	return filepath.Join(original_dir, full_file)
+}
+
+// Check the integrity of pipeline block.
+//
+// pb: Pipeline block to check.
+// Each block must associate with a valid operation.
+// If the operation is `resize`, the block must have a valid `ResizeConfig`.
+//
+// Returns error if pipeline block is invalid.
+func checkPipelineBlock(pb PipelineBlock) error {
+
+	switch pb.Operation {
+	case OperationDecode: // Decode block.
+		// Decode operation does not require additional configuration.
+		break
+	case OperationResize: // Resize block.
+		if pb.Resize == nil {
+			return ErrInvalidResizeBlock
+		}
+	case OperationEncode:
+		if pb.Encode == nil { // Encode block.
+			return ErrInvalidEncodeBlock
+		}
+	case OperationCrop: // Crop block.
+		if pb.Crop == nil {
+			return ErrInvalidCropBlock
+		}
+	case OperationWrite: // File output block.
+		if pb.Write == nil {
+			return ErrInvalidWriteBlock
+		}
+	case OperationIccEmbed: // ICC embedding block.
+		if pb.ICCEmbedProfile == nil {
+			return ErrInvalidIccBlock
+		}
+	default:
+		return ErrInvalidPipelineBlockType
+	}
+
+	return nil
+}
+
+// Check the integrity of pipeline block list.
+//
+// pbs: List of pipeline blocks to check.
+func checkPipelineBlockList(pbs []PipelineBlock) error {
+
+	for _, pb := range pbs {
+		err := checkPipelineBlock(pb)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Load config file from path.
@@ -41,7 +108,6 @@ func LoadConfigFromFile(config_path string) (*ConfigFileRoot, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	// Converting JSON to config structure.
 	var conf ConfigFileRoot                 // Parsed config placeholder.
 	err = yaml.Unmarshal(raw_config, &conf) // Convert JSON to structure.
@@ -49,41 +115,17 @@ func LoadConfigFromFile(config_path string) (*ConfigFileRoot, error) {
 		return nil, err
 	}
 
-	return &conf, nil
-}
+	// Iterate through profiles.
+	for _, profile := range conf.Profiles {
 
-// Pretty print config file.
-func (pf ConfigFileRoot) PrettyPrint() string {
-
-	var output string = "" // Placeholder for output.
-
-	ident := "  " // Indentation.
-
-	for _, pf := range pf.Profiles { // Iterate through profiles.
-
-		output += "Profile Name: " + pf.ProfileName + "\n"
-		output += ident + "ICC Profile: " + pf.ICC + "\n"
-
-		if pf.Resize != nil {
-			output += ident + "Resizing Configuration:\n"
-			output += ident + ident + "Resize Width: " + fmt.Sprintf("%d", pf.Resize.Width) + "\n"
-			output += ident + ident + "Resize Height: " + fmt.Sprintf("%d", pf.Resize.Height) + "\n"
-			output += ident + ident + "Resize Factor: " + fmt.Sprintf("%f.2", pf.Resize.Factor) + "\n"
-			output += ident + ident + "Resize Algorithm: " + pf.Resize.Algorithm + "\n"
+		// Check pipeline blocks.
+		err = checkPipelineBlockList(profile.PipelineBlocks)
+		if err != nil {
+			return nil, err
 		}
-
-		if pf.Output != nil {
-			output += ident + "Output Configuration:\n"
-			output += ident + ident + "Output Format: " + pf.Output.Format + "\n"
-			output += ident + ident + "Output Name Prefix: " + pf.Output.NamePrefix + "\n"
-			output += ident + ident + "Output Name Suffix: " + pf.Output.NameSuffix + "\n"
-			if pf.Output.Options != nil {
-				output += ident + ident + "Encoder Quality: " + fmt.Sprintf("%d", pf.Output.Options.Quality) + "\n"
-			}
-		}
-		output += "\n"
 	}
-	return output
+
+	return &conf, nil
 }
 
 // Profile instance to yaml string.
@@ -98,30 +140,50 @@ func (profile_root ConfigFileRoot) ToYaml() string {
 	return string(yaml_str)
 }
 
+// Assign input file to current config.
+//
+// This is a temporary solution to the issue which "write" block cannot get original input file name.
+// With this helper function, all pipeline block can have similar signature.
+// TODO: Find another solution ;)
+func (profile_root *ConfigFileRoot) AssignInputFile(input_file string) {
+
+	for _, profile := range profile_root.Profiles {
+		for _, pb := range profile.PipelineBlocks {
+			if pb.Operation == OperationWrite {
+				pb.Write.origFileName = input_file
+			}
+		}
+	}
+}
+
 // Generate a config that does nothing to input image.
-func GenerateDefaultConfig() string {
+func GenerateDefaultConfig() ConfigFileRoot {
 
 	// Default config.
 	default_config := ConfigFileRoot{
 		Profiles: []ProcessProfileConfig{
 			{
 				ProfileName: "SampleProfile",
-				ICC:         "",
-				Resize: &ResizeConfig{
-					Factor:    1.0,
-					Algorithm: "nearestneighbor",
-				},
-				Output: &OutputConfig{
-					Format:     "jpg",
-					NameSuffix: "",
-					NamePrefix: "",
-					Options: &OutputOptionConfig{
-						Quality: 100,
+				PipelineBlocks: []PipelineBlock{
+					{
+						Operation: OperationDecode,
+					},
+					{
+						Operation: OperationEncode,
+						Encode: &EncodeConfig{
+							Format: "jpeg",
+						},
+					},
+					{
+						Operation: OperationWrite,
+						Write: &OutputConfig{
+							NameSuffix: "_output",
+						},
 					},
 				},
 			},
 		},
 	}
 
-	return default_config.ToYaml()
+	return default_config
 }
