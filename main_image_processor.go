@@ -42,7 +42,7 @@ func getProfileFromHomeDir(profile_name string, create_dir bool) (path string, e
 				}
 
 				// Writing default profile.
-				err = os.WriteFile(profile_file, []byte(config.GenerateDefaultConfig()), 0777)
+				err = os.WriteFile(profile_file, []byte(config.GenerateDefaultConfig().ToYaml()), 0777)
 				if err != nil {
 					return "", err
 				}
