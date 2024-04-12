@@ -52,6 +52,9 @@ func (ocf OutputConfig) GenerateFileName(input_name string) string {
 func checkPipelineBlock(pb PipelineBlock) error {
 
 	switch pb.Operation {
+	case "decode":
+		// Decode operation does not require additional configuration.
+		break
 	case "resize":
 		if pb.Resize == nil {
 			return ErrInvalidResizeBlock
@@ -135,32 +138,34 @@ func (profile_root ConfigFileRoot) ToYaml() string {
 	return string(yaml_str)
 }
 
-/*
 // Generate a config that does nothing to input image.
-func GenerateDefaultConfig() string {
+func GenerateDefaultConfig() ConfigFileRoot {
 
 	// Default config.
 	default_config := ConfigFileRoot{
 		Profiles: []ProcessProfileConfig{
 			{
 				ProfileName: "SampleProfile",
-				ICC:         "",
-				Resize: &ResizeConfig{
-					Factor:    1.0,
-					Algorithm: "nearestneighbor",
-				},
-				Output: &OutputConfig{
-					Format:     "jpg",
-					NameSuffix: "",
-					NamePrefix: "",
-					Options: &OutputOptionConfig{
-						Quality: 100,
+				PipelineBlocks: []PipelineBlock{
+					{
+						Operation: "decode",
+					},
+					{
+						Operation: "encode",
+						Encode: &EncodeConfig{
+							Format: "jpeg",
+						},
+					},
+					{
+						Operation: "write",
+						Write: &OutputConfig{
+							NameSuffix: "_output",
+						},
 					},
 				},
 			},
 		},
 	}
 
-	return default_config.ToYaml()
+	return default_config
 }
-*/
