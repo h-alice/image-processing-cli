@@ -16,13 +16,13 @@ func PipelineBlockToOperation(pb PipelineBlock) op.Operation {
 		return op.Decode()
 
 	case OperationResize: // Resize block.
-		if pb.Resize.Factor != 0.0 {
+		if pb.Resize.Factor != 0.0 { // `Factor` nas first priority.
 			return op.ResizeImageByFactor(pb.Resize.Algorithm, pb.Resize.Factor)
-		} else if pb.Resize.Width != 0 {
+		} else if pb.Resize.Width != 0 { // If `Factor` is not set, use `Width`.
 			return op.ResizeImageByWidth(pb.Resize.Algorithm, pb.Resize.Width)
-		} else if pb.Resize.Height != 0 {
+		} else if pb.Resize.Height != 0 { // If `Width` is not set, use `Height`.
 			return op.ResizeImageByHeight(pb.Resize.Algorithm, pb.Resize.Height)
-		} else {
+		} else { // Empty resize block.
 			return nil // This should not happen, since the config has been checked.
 		}
 

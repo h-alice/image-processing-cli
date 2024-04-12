@@ -32,10 +32,10 @@ type OutputOptionConfig op.EncoderOption
 //
 // Options: Encoder option. For jpeg use and supports only `Quality` option.
 type OutputConfig struct {
-	Format     string `yaml:"format"` // Output file format
-	NameSuffix string `yaml:"suffix"` // Output file name suffix
-	NamePrefix string `yaml:"prefix"` // Output file name prefix
-	fileName   string // This is used to store the file name of input image, hence no need to serialize this field.
+	Format       string `yaml:"format"` // Output file format
+	NameSuffix   string `yaml:"suffix"` // Output file name suffix
+	NamePrefix   string `yaml:"prefix"` // Output file name prefix
+	origFileName string // This is used to store the file name of input image, hence no need to serialize this field.
 }
 
 // Config structure for resizing image.

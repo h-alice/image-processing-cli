@@ -21,9 +21,9 @@ var (
 
 // Generate output file name.
 func (ocf OutputConfig) GenerateFileName() string {
-	original_dir := filepath.Dir(ocf.fileName)                   // Get original file directory.
-	original_ext := filepath.Ext(ocf.fileName)                   // Get file extension.
-	original_name := filepath.Base(ocf.fileName)                 // Get file name.
+	original_dir := filepath.Dir(ocf.origFileName)               // Get original file directory.
+	original_ext := filepath.Ext(ocf.origFileName)               // Get file extension.
+	original_name := filepath.Base(ocf.origFileName)             // Get file name.
 	stem := original_name[:len(original_name)-len(original_ext)] // Get file name w/o extension.
 
 	fileSuffix := ""
@@ -150,7 +150,7 @@ func (profile_root *ConfigFileRoot) AssignInputFile(input_file string) {
 	for _, profile := range profile_root.Profiles {
 		for _, pb := range profile.PipelineBlocks {
 			if pb.Operation == OperationWrite {
-				pb.Write.fileName = input_file
+				pb.Write.origFileName = input_file
 			}
 		}
 	}
