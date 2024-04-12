@@ -89,6 +89,7 @@ type OutputDirConfig struct {
 //
 // Operation: Operation name.
 // NOTE: The operation type is one of the following:
+// - `decode`
 // - `crop`
 // - `resize`
 // - `icc_embed`
