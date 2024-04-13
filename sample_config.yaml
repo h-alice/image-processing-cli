@@ -3,18 +3,31 @@
 
 # This is the full config, you can omit the fields to disable operations not needed.
 
-profiles:
-  - profileName: "Profile1" # Name of the profile.
-    icc: "DISPLAY P3" # One of the following: "SRGB", "DISPLAY P3", "DCI P3", "ADOBE RGB", "ROMM RGB"
-    resize:
-      algorithm: "catmullrom" # One of the following: "nearestneighbor", "catmullrom", "approxbiLinear"
-      factor: 0.9 # Resize factor.
-      width: 100  # Resize width. If `factor` is set, this is ignored.
-      height: 200 # Resize height. If `factor` or `width` is set, this is ignored.
-    output:
-      format: "jpeg" # One of the following: "jpeg" ("jpg"), "png"
-      nameSuffix: "_suffix1"  # Suffix to append to the output file name.
-      namePrefix: "prefix1_"  # Prefix to append to the output file name.
-      options:
-        quality: 80 # JPEG quality. Not used for PNG.
-
+profiles: # This config test provides all available fields.
+  - profile_name: "Sample Profile"
+    pipeline: # List of operations to perform on the image.
+      - operation: "decode"   # Decode the image.
+      - operation: "crop"     # Crop the image.
+        crop_config:
+          width: 50           # Crop width.
+          height: 60          # Crop height.
+          alignment: "center" # Crop alignment. One of the following: "center", "topleft".
+      - operation: "resize"       # Resize the image.
+        resize_config:
+          algorithm: "catmullrom" # Resize algorithm. One of the following: "nearestneighbor", "catmullrom", "approxbiLinear".
+          factor: 0.9             # Resize factor, this field has first priority, if it is set, width and height will be ignored.
+          width: 100              # Resize width, this field has second priority.
+          height: 200             # Resize height, this field has last priority, only used if neither factor nor width is set.
+      - operation: "encode" # Encode the image.
+        encode_config:
+          format: "jpeg"    # Encode format. One of the following: "jpeg" ("jpg"), "png".
+          options:
+            quality: 80     # JPEG quality, 100 is the best quality, 0 is the worst. Not used for PNG.
+      - operation: "icc_embed" # Embed ICC profile.
+        icc_config:
+          icc_name: "sRGB"     # ICC profile name. One of the following: "sRGB", "DISPLAY P3", "DCI P3", "ADOBE RGB", "ROMM RGB".
+      - operation: "write"    # Write the image.
+        write_config:
+          format: "jpeg"      # Write format. One of the following: "jpeg" ("jpg"), "png".
+          suffix: "_suffix1"  # Suffix to append to the output file name.
+          prefix: "prefix1_"  # Prefix to append to the output file name.
