@@ -11,7 +11,7 @@ profiles: # This config test provides all available fields.
         crop_config:
           width: 50           # Crop width.
           height: 60          # Crop height.
-          alignment: "center" # Crop alignment. One of the following: "center", "topleft".
+          alignment: "center" # Crop alignment. One of the following: "center", "topleft", "topright", "bottomleft", "bottomright".
       - operation: "resize"       # Resize the image.
         resize_config:
           algorithm: "catmullrom" # Resize algorithm. One of the following: "nearestneighbor", "catmullrom", "approxbiLinear".
