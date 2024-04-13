@@ -32,10 +32,10 @@ type OutputOptionConfig op.EncoderOption
 //
 // Options: Encoder option. For jpeg use and supports only `Quality` option.
 type OutputConfig struct {
-	Format       string `yaml:"format"` // Output file format
-	NameSuffix   string `yaml:"suffix"` // Output file name suffix
-	NamePrefix   string `yaml:"prefix"` // Output file name prefix
-	origFileName string // This is used to store the file name of input image, hence no need to serialize this field.
+	Format           string `yaml:"format"` // Output file format
+	NameSuffix       string `yaml:"suffix"` // Output file name suffix
+	NamePrefix       string `yaml:"prefix"` // Output file name prefix
+	assignedFilePath string // This is used to store the file name of input image, hence no need to serialize this field.
 }
 
 // Config structure for resizing image.
@@ -88,9 +88,10 @@ type CropConfig struct {
 // Resize: Resize option.
 //
 // Output: Output file configuration.
-type ProcessProfileConfig struct {
-	ProfileName    string          `yaml:"profile_name"` // Profile identifier
-	PipelineBlocks []PipelineBlock `yaml:"pipeline"`     // Pipeline blocks
+type ImageProcessingProfile struct {
+	ProfileName      string          `yaml:"profile_name"` // Profile identifier
+	assignedFilePath string          // This is used to store the file name of input image, hence no need to serialize this field.
+	PipelineBlocks   []PipelineBlock `yaml:"pipeline"` // Pipeline blocks
 }
 
 // Currently not used.
@@ -120,6 +121,6 @@ type PipelineBlock struct {
 // Config structure for config file.
 //
 // Profiles: List of profile configurations.
-type ConfigFileRoot struct {
-	Profiles []ProcessProfileConfig `yaml:"profiles"` // List of profile configurations
+type ProfileRoot struct {
+	Profiles []ImageProcessingProfile `yaml:"profiles"` // List of profile configurations
 }
