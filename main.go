@@ -119,11 +119,10 @@ func main() {
 		}
 	}
 
-	// Create result channel to capture return from goroutine.
-	result_chan := make(chan error) // Result channel.
-
 	// Iterate through input images.
 	for _, f := range flag.Args() { // Iterate through input images.
+		// Create result channel to capture return from goroutine.
+		result_chan := make(chan error) // Result channel.
 
 		// Currently, this function will only affect the `fileName` field in `write` block.
 		// This is a temporary solution to the issue which "write" block cannot get original input file name.
@@ -140,11 +139,11 @@ func main() {
 			// Process image in goroutine.
 			go mainWorker(ctx, pf, result_chan)
 		}
-	}
 
-	// Wait for all goroutines to finish.
-	for range config_root.Profiles {
-		<-result_chan
+		// Wait for all goroutines to finish.
+		for range config_root.Profiles {
+			<-result_chan
+		}
 	}
 
 	log.Printf("[+] All images processed.\n")
