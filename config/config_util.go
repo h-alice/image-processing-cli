@@ -194,6 +194,11 @@ func MergeConfigFiles(configs ...ProfileRoot) ProfileRoot {
 	return merged_config
 }
 
+// Get assigned file path from profile.
+func (pf ImageProcessingProfile) GetAssignedFilePath() string {
+	return pf.assignedFilePath
+}
+
 // Generate a config that does nothing to input image.
 func GenerateDefaultConfig() ProfileRoot {
 
