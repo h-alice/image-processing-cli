@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	op "imagecore/operation"
 	"os"
 	"path/filepath"
 	"strings"
@@ -169,6 +170,12 @@ func (profile *ImageProcessingProfile) AssignInputFile(input_file string) {
 		}
 	}
 
+}
+
+// Create image file from assigned file path.
+func (pf ImageProcessingProfile) CreateImageFile() (op.CurrentProcessingImage, error) {
+	// Create image file.
+	return op.CreateImageFromFile(pf.assignedFilePath)
 }
 
 // Merge multiple config files.
