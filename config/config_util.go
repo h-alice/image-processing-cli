@@ -102,17 +102,17 @@ func checkPipelineBlockList(pbs []PipelineBlock) error {
 // Load config file from path.
 //
 // config_path: Path to config file.
-func LoadConfigFromFile(config_path string) (*ConfigFileRoot, error) {
+func LoadConfigFromFile(config_path string) (ConfigFileRoot, error) {
 
 	raw_config, err := os.ReadFile(config_path) // Read raw config file.
 	if err != nil {
-		return nil, err
+		return ConfigFileRoot{}, err
 	}
 	// Converting JSON to config structure.
 	var conf ConfigFileRoot                 // Parsed config placeholder.
 	err = yaml.Unmarshal(raw_config, &conf) // Convert JSON to structure.
 	if err != nil {
-		return nil, err
+		return ConfigFileRoot{}, err
 	}
 
 	// Iterate through profiles.
@@ -121,11 +121,11 @@ func LoadConfigFromFile(config_path string) (*ConfigFileRoot, error) {
 		// Check pipeline blocks.
 		err = checkPipelineBlockList(profile.PipelineBlocks)
 		if err != nil {
-			return nil, err
+			return ConfigFileRoot{}, err
 		}
 	}
 
-	return &conf, nil
+	return conf, nil
 }
 
 // Profile instance to yaml string.
@@ -154,6 +154,22 @@ func (profile_root *ConfigFileRoot) AssignInputFile(input_file string) {
 			}
 		}
 	}
+}
+
+// Merge multiple config files.
+func MergeConfigFiles(configs ...ConfigFileRoot) ConfigFileRoot {
+
+	// Placeholder for merged config.
+	merged_config := ConfigFileRoot{
+		Profiles: []ProcessProfileConfig{},
+	}
+
+	// Iterate through all input config.
+	for _, conf := range configs {
+		merged_config.Profiles = append(merged_config.Profiles, conf.Profiles...)
+	}
+
+	return merged_config
 }
 
 // Generate a config that does nothing to input image.
