@@ -156,6 +156,22 @@ func (profile_root *ConfigFileRoot) AssignInputFile(input_file string) {
 	}
 }
 
+// Merge multiple config files.
+func MergeConfigFiles(configs ...ConfigFileRoot) ConfigFileRoot {
+
+	// Placeholder for merged config.
+	merged_config := ConfigFileRoot{
+		Profiles: []ProcessProfileConfig{},
+	}
+
+	// Iterate through all input config.
+	for _, conf := range configs {
+		merged_config.Profiles = append(merged_config.Profiles, conf.Profiles...)
+	}
+
+	return merged_config
+}
+
 // Generate a config that does nothing to input image.
 func GenerateDefaultConfig() ConfigFileRoot {
 
