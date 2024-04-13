@@ -34,8 +34,8 @@ func ProcessFile(profile config.ImageProcessingProfile) error {
 	}
 
 	// Create image processing pipeline.
-	for index, pb := range profile.PipelineBlocks {
-		log.Printf("Processing Operation #%d: %s", index, pb.Operation)
+	for _, pb := range profile.PipelineBlocks {
+		// log.Printf("Processing Operation #%d: %s", index, pb.Operation)
 		working_image = working_image.Then(config.PipelineBlockToOperation(pb))
 		if working_image.LastError() != nil {
 			log.Printf("[x] Error while processing image: %v", working_image.LastError())
