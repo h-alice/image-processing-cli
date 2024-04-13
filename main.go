@@ -13,8 +13,6 @@ import (
 
 func ProcessFile(profile config.ProcessProfileConfig, in io.Reader) error {
 
-	// Procedure: Decode -> image ops -> encode -> segment ops -> write out
-
 	working_image, err := op.CreateImageFromReader(in)
 	if err != nil {
 		log.Printf("[x] Error while creating image: %v", err)
