@@ -148,8 +148,10 @@ func (profile_root ProfileRoot) ToYaml() string {
 // TODO: Find another solution ;)
 func (profile_root *ProfileRoot) AssignInputFile(input_file string) {
 
-	for _, profile := range profile_root.Profiles {
-		profile.AssignInputFile(input_file)
+	for index, profile := range profile_root.Profiles {
+		ptr_profile := &profile                     // Get pointer to profile.
+		ptr_profile.AssignInputFile(input_file)     // Assign input file to profile.
+		profile_root.Profiles[index] = *ptr_profile // Assign profile back to root.
 	}
 }
 
