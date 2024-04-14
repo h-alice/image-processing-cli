@@ -1,13 +1,12 @@
 package main
 
 import (
-	"bytes"
+	"context"
 	"flag"
-	op "imagecore/operation"
 	"imagetools/config"
-	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -26,17 +25,17 @@ func (m *inputConfigFilePaths) Set(value string) error {
 }
 
 // Process image file with profile.
-func ProcessFile(profile config.ProcessProfileConfig, in io.Reader) error {
+func ProcessFile(profile config.ImageProcessingProfile) error {
 
-	working_image, err := op.CreateImageFromReader(in)
+	working_image, err := profile.CreateImageFile()
 	if err != nil {
 		log.Printf("[x] Error while creating image: %v", err)
 		return err
 	}
 
 	// Create image processing pipeline.
-	for index, pb := range profile.PipelineBlocks {
-		log.Printf("Processing Operation #%d: %s", index, pb.Operation)
+	for _, pb := range profile.PipelineBlocks {
+		// log.Printf("Processing Operation #%d: %s", index, pb.Operation)
 		working_image = working_image.Then(config.PipelineBlockToOperation(pb))
 		if working_image.LastError() != nil {
 			log.Printf("[x] Error while processing image: %v", working_image.LastError())
@@ -47,7 +46,43 @@ func ProcessFile(profile config.ProcessProfileConfig, in io.Reader) error {
 	return nil
 }
 
+// Main worker.
+func mainWorker(ctx context.Context, profile config.ImageProcessingProfile, result_chan chan<- error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Get only file name from the path.
+	input_image_name := profile.GetAssignedFilePath()
+	input_image_name = filepath.Base(input_image_name)
+
+	log.Printf("[.] Processing image [%s] with profile [%s]\n", input_image_name, profile.ProfileName)
+
+	// Process image.
+	for {
+		select {
+		case <-ctx.Done(): // Check if context is cancelled.
+			log.Printf("[!] Context cancelled. Exiting...\n")
+			result_chan <- nil
+			return // Terminate goroutine.
+		default:
+			err := ProcessFile(profile) // Process image.
+			if err != nil {
+				log.Printf("[x] Error while processing image: %v\n", err)
+				result_chan <- err
+				return // Terminate goroutine.
+			}
+			result_chan <- nil
+			return // Goroutine finished.
+		}
+	}
+}
+
+// Main function.
 func main() {
+
+	// Context for main worker.
+	ctx := context.Background()
 
 	config_paths := new(inputConfigFilePaths)
 
@@ -55,11 +90,11 @@ func main() {
 	flag.Var(config_paths, "f", "Config file path (can be specified multiple times)")
 	flag.Parse()
 
-	config_root := config.ConfigFileRoot{}
+	config_root := config.ProfileRoot{}
 
 	// Merge all config files, if any specified.
 	if len(*config_paths) != 0 {
-		loaded_configs := make([]config.ConfigFileRoot, 0) // Placeholder for loaded configs.
+		loaded_configs := make([]config.ProfileRoot, 0) // Placeholder for loaded configs.
 		for _, path := range *config_paths {
 			conf, err := config.LoadConfigFromFile(path) // Load config file.
 			if err != nil {
@@ -70,7 +105,7 @@ func main() {
 		config_root = config.MergeConfigFiles(loaded_configs...) // Merge all loaded configs.
 	} else { // If path not specified, load defaultprofile from home directory.
 
-		log.Printf("[!] Using default config file.")
+		log.Printf("[!] Using default config file.\n")
 
 		config_path, err := getProfileFromHomeDir("default", true)
 
@@ -84,36 +119,32 @@ func main() {
 		}
 	}
 
+	// Iterate through input images.
 	for _, f := range flag.Args() { // Iterate through input images.
+		// Create result channel to capture return from goroutine.
+		result_chan := make(chan error) // Result channel.
 
 		// Currently, this function will only affect the `fileName` field in `write` block.
 		// This is a temporary solution to the issue which "write" block cannot get original input file name.
 		config_root.AssignInputFile(f)
 
-		raw_bytes, err := os.ReadFile(f)
+		// Check if the file exists.
+		_, err := os.Stat(f) // Check if file exists.
 		if err != nil {
-			log.Printf("[x] Error while reading file: %s\n", err)
-			continue
+			log.Printf("[!] Input file not found: %s\n", f)
+			continue // Skip to next file.
 		}
 
-		tasks := make(chan struct{}, len(config_root.Profiles))
 		for _, pf := range config_root.Profiles { // Apply all profile to input image.
-
-			go func(pf config.ProcessProfileConfig) {
-
-				err = ProcessFile(pf, bytes.NewBuffer(raw_bytes))
-				if err != nil {
-					log.Printf("[x] An error occurred while processing image: %s\n", err)
-					return
-				}
-
-				tasks <- struct{}{}
-			}(pf)
+			// Process image in goroutine.
+			go mainWorker(ctx, pf, result_chan)
 		}
 
-		for i := 0; i < len(config_root.Profiles); i++ {
-			log.Println(i)
-			<-tasks
+		// Wait for all goroutines to finish.
+		for range config_root.Profiles {
+			<-result_chan
 		}
 	}
+
+	log.Printf("[+] All images processed.\n")
 }

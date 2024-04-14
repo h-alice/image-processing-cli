@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	op "imagecore/operation"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,9 +22,9 @@ var (
 
 // Generate output file name.
 func (ocf OutputConfig) GenerateFileName() string {
-	original_dir := filepath.Dir(ocf.origFileName)               // Get original file directory.
-	original_ext := filepath.Ext(ocf.origFileName)               // Get file extension.
-	original_name := filepath.Base(ocf.origFileName)             // Get file name.
+	original_dir := filepath.Dir(ocf.assignedFilePath)           // Get original file directory.
+	original_ext := filepath.Ext(ocf.assignedFilePath)           // Get file extension.
+	original_name := filepath.Base(ocf.assignedFilePath)         // Get file name.
 	stem := original_name[:len(original_name)-len(original_ext)] // Get file name w/o extension.
 
 	fileSuffix := ""
@@ -102,17 +103,17 @@ func checkPipelineBlockList(pbs []PipelineBlock) error {
 // Load config file from path.
 //
 // config_path: Path to config file.
-func LoadConfigFromFile(config_path string) (ConfigFileRoot, error) {
+func LoadConfigFromFile(config_path string) (ProfileRoot, error) {
 
 	raw_config, err := os.ReadFile(config_path) // Read raw config file.
 	if err != nil {
-		return ConfigFileRoot{}, err
+		return ProfileRoot{}, err
 	}
 	// Converting JSON to config structure.
-	var conf ConfigFileRoot                 // Parsed config placeholder.
+	var conf ProfileRoot                    // Parsed config placeholder.
 	err = yaml.Unmarshal(raw_config, &conf) // Convert JSON to structure.
 	if err != nil {
-		return ConfigFileRoot{}, err
+		return ProfileRoot{}, err
 	}
 
 	// Iterate through profiles.
@@ -121,7 +122,7 @@ func LoadConfigFromFile(config_path string) (ConfigFileRoot, error) {
 		// Check pipeline blocks.
 		err = checkPipelineBlockList(profile.PipelineBlocks)
 		if err != nil {
-			return ConfigFileRoot{}, err
+			return ProfileRoot{}, err
 		}
 	}
 
@@ -129,7 +130,7 @@ func LoadConfigFromFile(config_path string) (ConfigFileRoot, error) {
 }
 
 // Profile instance to yaml string.
-func (profile_root ConfigFileRoot) ToYaml() string {
+func (profile_root ProfileRoot) ToYaml() string {
 
 	// Convert to yaml.
 	yaml_str, err := yaml.Marshal(profile_root)
@@ -140,28 +141,51 @@ func (profile_root ConfigFileRoot) ToYaml() string {
 	return string(yaml_str)
 }
 
-// Assign input file to current config.
+// Assign input file to current config file.
 //
 // This is a temporary solution to the issue which "write" block cannot get original input file name.
 // With this helper function, all pipeline block can have similar signature.
 // TODO: Find another solution ;)
-func (profile_root *ConfigFileRoot) AssignInputFile(input_file string) {
+func (profile_root *ProfileRoot) AssignInputFile(input_file string) {
 
-	for _, profile := range profile_root.Profiles {
-		for _, pb := range profile.PipelineBlocks {
-			if pb.Operation == OperationWrite {
-				pb.Write.origFileName = input_file
-			}
-		}
+	for index, profile := range profile_root.Profiles {
+		ptr_profile := &profile                     // Get pointer to profile.
+		ptr_profile.AssignInputFile(input_file)     // Assign input file to profile.
+		profile_root.Profiles[index] = *ptr_profile // Assign profile back to root.
 	}
 }
 
+// Assign input file to current profile.
+//
+// This is a temporary solution to the issue which "write" block cannot get original input file name.
+// With this helper function, all pipeline block can have similar signature, and hence can stack together.
+// TODO: Find another solution ;)
+func (profile *ImageProcessingProfile) AssignInputFile(input_file string) {
+
+	// Assign input file to profile.
+	profile.assignedFilePath = input_file
+
+	// Assign input file to all pipeline blocks.
+	for _, pb := range profile.PipelineBlocks {
+		if pb.Operation == OperationWrite {
+			pb.Write.assignedFilePath = input_file
+		}
+	}
+
+}
+
+// Create image file from assigned file path.
+func (pf ImageProcessingProfile) CreateImageFile() (op.CurrentProcessingImage, error) {
+	// Create image file.
+	return op.CreateImageFromFile(pf.assignedFilePath)
+}
+
 // Merge multiple config files.
-func MergeConfigFiles(configs ...ConfigFileRoot) ConfigFileRoot {
+func MergeConfigFiles(configs ...ProfileRoot) ProfileRoot {
 
 	// Placeholder for merged config.
-	merged_config := ConfigFileRoot{
-		Profiles: []ProcessProfileConfig{},
+	merged_config := ProfileRoot{
+		Profiles: []ImageProcessingProfile{},
 	}
 
 	// Iterate through all input config.
@@ -172,12 +196,17 @@ func MergeConfigFiles(configs ...ConfigFileRoot) ConfigFileRoot {
 	return merged_config
 }
 
+// Get assigned file path from profile.
+func (pf ImageProcessingProfile) GetAssignedFilePath() string {
+	return pf.assignedFilePath
+}
+
 // Generate a config that does nothing to input image.
-func GenerateDefaultConfig() ConfigFileRoot {
+func GenerateDefaultConfig() ProfileRoot {
 
 	// Default config.
-	default_config := ConfigFileRoot{
-		Profiles: []ProcessProfileConfig{
+	default_config := ProfileRoot{
+		Profiles: []ImageProcessingProfile{
 			{
 				ProfileName: "SampleProfile",
 				PipelineBlocks: []PipelineBlock{

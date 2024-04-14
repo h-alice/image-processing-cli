@@ -4,3 +4,6 @@ vendor
 
 # Local IDE generated files.
 .vscode
+
+# Local test files.
+local_test_files
