@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"imagetools/config"
 	"log"
 	"os"
@@ -112,7 +111,7 @@ func main() {
 			}
 
 			// Iterate through input images.
-			for _, f := range flag.Args() { // Iterate through input images.
+			for _, f := range c.Args().Slice() {
 				// Create result channel to capture return from goroutine.
 				result_chan := make(chan error) // Result channel.
 
