@@ -7,24 +7,9 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/urfave/cli/v2"
 )
-
-// This is a list which holds the input config file paths.
-type inputConfigFilePaths []string
-
-// Implementing the flag.Value interface.
-func (m *inputConfigFilePaths) String() string {
-	return strings.Join(*m, ", ")
-}
-
-// Implementing the flag.Value interface.
-func (m *inputConfigFilePaths) Set(value string) error {
-	*m = append(*m, value)
-	return nil
-}
 
 // Process image file with profile.
 func ProcessFile(profile config.ImageProcessingProfile) error {
