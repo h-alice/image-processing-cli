@@ -1,3 +1,4 @@
+// Description: Main entry point for the CLI application.
 package main
 
 import (

@@ -1,6 +1,5 @@
+// Descritpion: This is the declaration of the main worker, and file processing subroutines.
 package main
-
-// This is the declaration of the main worker, and file processing subroutines.
 
 import (
 	"context"
@@ -10,7 +9,9 @@ import (
 )
 
 // Process image file with profile.
-func ProcessFile(profile config.ImageProcessingProfile) error {
+//
+// profile: Image processing profile.
+func processFile(profile config.ImageProcessingProfile) error {
 
 	working_image, err := profile.CreateImageFile()
 	if err != nil {
@@ -31,7 +32,11 @@ func ProcessFile(profile config.ImageProcessingProfile) error {
 	return nil
 }
 
-// Main worker.
+// Main worker, this subroutine is designed to be run in a goroutine.
+//
+// ctx: Context.
+// profile: Image processing profile.
+// result_chan: Result channel, used to send result back to main thread.
 func mainWorker(ctx context.Context, profile config.ImageProcessingProfile, result_chan chan<- error) {
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -51,7 +56,7 @@ func mainWorker(ctx context.Context, profile config.ImageProcessingProfile, resu
 			result_chan <- nil
 			return // Terminate goroutine.
 		default:
-			err := ProcessFile(profile) // Process image.
+			err := processFile(profile) // Process image.
 			if err != nil {
 				log.Printf("[x] Error while processing image: %v\n", err)
 				result_chan <- err
