@@ -1,149 +1,174 @@
+// Description: Main entry point for the CLI application.
 package main
 
 import (
 	"context"
-	"flag"
+	"fmt"
 	"imagetools/config"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
+
+	"github.com/urfave/cli/v2"
 )
 
-// This is a list which holds the input config file paths.
-type inputConfigFilePaths []string
+// Get profile from home directory.
+// This function will trying to get profile from `.imgtools` directory in home directory.
+//
+// profile_name: Profile name.
+// create_dir: Create directory if not exists.
+func getProfileFromHomeDir(profile_name string, create_dir bool) (path string, err error) {
 
-// Implementing the flag.Value interface.
-func (m *inputConfigFilePaths) String() string {
-	return strings.Join(*m, ", ")
-}
+	// If profile name is empty, use `default``.
+	if profile_name == "" {
+		profile_name = "default"
+	}
 
-// Implementing the flag.Value interface.
-func (m *inputConfigFilePaths) Set(value string) error {
-	*m = append(*m, value)
-	return nil
-}
+	profile_name = fmt.Sprintf("%s.yaml", profile_name) // Append `.yaml` extension.
 
-// Process image file with profile.
-func ProcessFile(profile config.ImageProcessingProfile) error {
-
-	working_image, err := profile.CreateImageFile()
+	home, err := os.UserHomeDir() // Get home directory.
 	if err != nil {
-		log.Printf("[x] Error while creating image: %v", err)
-		return err
+		return "", err
 	}
 
-	// Create image processing pipeline.
-	for _, pb := range profile.PipelineBlocks {
-		// log.Printf("Processing Operation #%d: %s", index, pb.Operation)
-		working_image = working_image.Then(config.PipelineBlockToOperation(pb))
-		if working_image.LastError() != nil {
-			log.Printf("[x] Error while processing image: %v", working_image.LastError())
-			return working_image.LastError()
-		}
-	}
+	profile_dir := filepath.Join(home, ".imgtools")                // Profile directory.
+	profile_file := filepath.Join(home, ".imgtools", profile_name) // Profile file.
 
-	return nil
-}
+	_, err = os.Stat(profile_dir) // Check profile directory.
+	if err != nil {
 
-// Main worker.
-func mainWorker(ctx context.Context, profile config.ImageProcessingProfile, result_chan chan<- error) {
+		// If directory not exists and create_dir is true, create directory.
+		if os.IsNotExist(err) {
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+			if create_dir { // Making profile directory if not exists.
+				err = os.Mkdir(profile_dir, 0777)
+				if err != nil {
+					return "", err
+				}
 
-	// Get only file name from the path.
-	input_image_name := profile.GetAssignedFilePath()
-	input_image_name = filepath.Base(input_image_name)
-
-	log.Printf("[.] Processing image [%s] with profile [%s]\n", input_image_name, profile.ProfileName)
-
-	// Process image.
-	for {
-		select {
-		case <-ctx.Done(): // Check if context is cancelled.
-			log.Printf("[!] Context cancelled. Exiting...\n")
-			result_chan <- nil
-			return // Terminate goroutine.
-		default:
-			err := ProcessFile(profile) // Process image.
-			if err != nil {
-				log.Printf("[x] Error while processing image: %v\n", err)
-				result_chan <- err
-				return // Terminate goroutine.
+				// Writing default profile.
+				err = os.WriteFile(profile_file, []byte(config.GenerateDefaultConfig().ToYaml()), 0777)
+				if err != nil {
+					return "", err
+				}
+			} else { // If create_dir is false, return error.
+				return "", err
 			}
-			result_chan <- nil
-			return // Goroutine finished.
+		} else {
+			return "", err
 		}
 	}
+
+	return profile_file, err
 }
 
-// Main function.
+// Main function, defines arguments and flags.
 func main() {
 
 	// Context for main worker.
 	ctx := context.Background()
 
-	config_paths := new(inputConfigFilePaths)
+	app := &cli.App{
+		Name:  "Image Processing CLI",
+		Usage: "Batch process images",
+		Authors: []*cli.Author{
+			{
+				Name:  "h-alice",
+				Email: "admin@halice.art",
+			},
+			{
+				Name:  "natlee",
+				Email: "natlee.work@gmail.com",
+			},
+		},
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{
+				Name:  "f",
+				Usage: "Config file path (can be specified multiple times)",
+			},
+		},
+		Action: func(c *cli.Context) error {
 
-	// Parse command line.
-	flag.Var(config_paths, "f", "Config file path (can be specified multiple times)")
-	flag.Parse()
+			// Placeholder for input config file paths.
+			loaded_configs := make([]config.ProfileRoot, 0) // Placeholder for loaded configs.
 
-	config_root := config.ProfileRoot{}
+			// Placeholder for config root.
+			config_root := config.ProfileRoot{}
 
-	// Merge all config files, if any specified.
-	if len(*config_paths) != 0 {
-		loaded_configs := make([]config.ProfileRoot, 0) // Placeholder for loaded configs.
-		for _, path := range *config_paths {
-			conf, err := config.LoadConfigFromFile(path) // Load config file.
-			if err != nil {
-				log.Printf("[!] Error (%s) while loading config file: %s The config file will be ignored.\n", err, path)
+			// First, check if any argument is specified.
+			if c.NArg() == 0 {
+				// Show help message.
+				cli.ShowAppHelpAndExit(c, 1)
 			}
-			loaded_configs = append(loaded_configs, conf) // Append to loaded configs.
-		}
-		config_root = config.MergeConfigFiles(loaded_configs...) // Merge all loaded configs.
-	} else { // If path not specified, load defaultprofile from home directory.
 
-		log.Printf("[!] Using default config file.\n")
+			// And then we chack if any image file is specified.
+			if c.Args().Len() == 0 {
+				cli.ShowAppHelp(c)
+				log.Printf("[!] No image file specified, check again your input.\n")
+				return nil
+			}
 
-		config_path, err := getProfileFromHomeDir("default", true)
+			for _, path := range c.StringSlice("f") { // Iterate through input config file paths.
+				conf, err := config.LoadConfigFromFile(path) // Load config file.
+				if err != nil {
+					log.Printf("[!] Error (%s) while loading config file: %s The config file will be ignored.\n", err, path)
+				}
+				loaded_configs = append(loaded_configs, conf) // Append to loaded configs.
+			}
 
-		if err != nil {
-			log.Fatalf("[x] Cannot load default config file: %s\n", err)
-		}
+			config_root = config.MergeConfigFiles(loaded_configs...) // Merge all loaded configs.
 
-		config_root, err = config.LoadConfigFromFile(config_path) // Load default config file.
-		if err != nil {
-			log.Fatalf("[x] Cannot load default config file: %s\n", err)
-		}
+			// If no profile specified, try to load default profile from home directory.
+			// If there still an error, exit the program.
+			if len(config_root.Profiles) == 0 {
+
+				log.Printf("[!] No profile specified. Trying to load default profile from home directory.\n")
+
+				config_path, err := getProfileFromHomeDir("default", true)
+				if err != nil {
+					log.Fatalf("[x] Cannot load default config file: %s\n", err)
+				}
+				config_root, err = config.LoadConfigFromFile(config_path) // Load default config file.
+				if err != nil {
+					log.Fatalf("[x] Cannot load default config file: %s\n", err)
+				}
+			}
+
+			// Iterate through input images.
+			for _, f := range c.Args().Slice() {
+				// Create result channel to capture return from goroutine.
+				result_chan := make(chan error) // Result channel.
+
+				// Currently, this function will only affect the `fileName` field in `write` block.
+				// This is a temporary solution to the issue which "write" block cannot get original input file name.
+				config_root.AssignInputFile(f)
+
+				// Check if the file exists.
+				_, err := os.Stat(f) // Check if file exists.
+				if err != nil {
+					log.Printf("[!] Input file not found: %s\n", f)
+					continue // Skip to next file.
+				}
+
+				// Dispatch goroutine for each profile.
+				for _, pf := range config_root.Profiles { // Apply all profile to input image.
+					// Process image in goroutine.
+					go mainWorker(ctx, pf, result_chan)
+				}
+
+				// Wait for all goroutines to finish.
+				for range config_root.Profiles {
+					<-result_chan
+				}
+			}
+
+			return nil
+		},
 	}
 
-	// Iterate through input images.
-	for _, f := range flag.Args() { // Iterate through input images.
-		// Create result channel to capture return from goroutine.
-		result_chan := make(chan error) // Result channel.
-
-		// Currently, this function will only affect the `fileName` field in `write` block.
-		// This is a temporary solution to the issue which "write" block cannot get original input file name.
-		config_root.AssignInputFile(f)
-
-		// Check if the file exists.
-		_, err := os.Stat(f) // Check if file exists.
-		if err != nil {
-			log.Printf("[!] Input file not found: %s\n", f)
-			continue // Skip to next file.
-		}
-
-		for _, pf := range config_root.Profiles { // Apply all profile to input image.
-			// Process image in goroutine.
-			go mainWorker(ctx, pf, result_chan)
-		}
-
-		// Wait for all goroutines to finish.
-		for range config_root.Profiles {
-			<-result_chan
-		}
+	err := app.Run(os.Args) // Run the app.
+	if err != nil {
+		log.Fatalf("[x] Error: %v\n", err)
 	}
 
 	log.Printf("[+] All images processed.\n")
