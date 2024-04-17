@@ -94,6 +94,19 @@ func main() {
 			// Placeholder for config root.
 			config_root := config.ProfileRoot{}
 
+			// First, check if any argument is specified.
+			if c.NArg() == 0 {
+				// Show help message.
+				cli.ShowAppHelpAndExit(c, 1)
+			}
+
+			// And then we chack if any image file is specified.
+			if c.Args().Len() == 0 {
+				cli.ShowAppHelp(c)
+				log.Printf("[!] No image file specified, check again your input.\n")
+				return nil
+			}
+
 			for _, path := range c.StringSlice("f") { // Iterate through input config file paths.
 				conf, err := config.LoadConfigFromFile(path) // Load config file.
 				if err != nil {
