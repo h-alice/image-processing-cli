@@ -104,6 +104,8 @@ func main() {
 
 			config_root = config.MergeConfigFiles(loaded_configs...) // Merge all loaded configs.
 
+			// If no profile specified, try to load default profile from home directory.
+			// If there still an error, exit the program.
 			if len(config_root.Profiles) == 0 {
 
 				log.Printf("[!] No profile specified. Trying to load default profile from home directory.\n")
@@ -150,7 +152,7 @@ func main() {
 		},
 	}
 
-	err := app.Run(os.Args)
+	err := app.Run(os.Args) // Run the app.
 	if err != nil {
 		log.Fatalf("[x] Error: %v\n", err)
 	}
