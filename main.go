@@ -107,7 +107,17 @@ func main() {
 			config_root = config.MergeConfigFiles(loaded_configs...) // Merge all loaded configs.
 
 			if len(config_root.Profiles) == 0 {
-				log.Fatalf("[x] No profile found in config file.\n")
+
+				log.Printf("[!] No profile specified. Trying to load default profile from home directory.\n")
+
+				config_path, err := getProfileFromHomeDir("default", true)
+				if err != nil {
+					log.Fatalf("[x] Cannot load default config file: %s\n", err)
+				}
+				config_root, err = config.LoadConfigFromFile(config_path) // Load default config file.
+				if err != nil {
+					log.Fatalf("[x] Cannot load default config file: %s\n", err)
+				}
 			}
 
 			// Iterate through input images.
@@ -126,6 +136,7 @@ func main() {
 					continue // Skip to next file.
 				}
 
+				// Dispatch goroutine for each profile.
 				for _, pf := range config_root.Profiles { // Apply all profile to input image.
 					// Process image in goroutine.
 					go mainWorker(ctx, pf, result_chan)
@@ -145,25 +156,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("[x] Error: %v\n", err)
 	}
-
-	// Merge all config files, if any specified.
-	//if len(*config_paths) != 0 {
-
-	// If path not specified, load defaultprofile from home directory.
-
-	//	log.Printf("[!] Using default config file.\n")
-	//
-	//	config_path, err := getProfileFromHomeDir("default", true)
-	//
-	//	if err != nil {
-	//		log.Fatalf("[x] Cannot load default config file: %s\n", err)
-	//	}
-	//
-	//	config_root, err = config.LoadConfigFromFile(config_path) // Load default config file.
-	//	if err != nil {
-	//		log.Fatalf("[x] Cannot load default config file: %s\n", err)
-	//	}
-	//
 
 	log.Printf("[+] All images processed.\n")
 }
