@@ -77,7 +77,8 @@ func main() {
 				Email: "admin@halice.art",
 			},
 			{
-				Name: "natlee",
+				Name:  "natlee",
+				Email: "natlee.work@gmail.com",
 			},
 		},
 		Flags: []cli.Flag{
