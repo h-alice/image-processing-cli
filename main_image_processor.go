@@ -1,58 +1,64 @@
 package main
 
+// This is the declaration of the main worker, and file processing subroutines.
+
 import (
-	"fmt"
+	"context"
 	"imagetools/config"
-	"os"
+	"log"
 	"path/filepath"
 )
 
-// Get profile from home directory.
-// This function will trying to get profile from `.imgtools` directory in home directory.
-//
-// profile_name: Profile name.
-// create_dir: Create directory if not exists.
-func getProfileFromHomeDir(profile_name string, create_dir bool) (path string, err error) {
+// Process image file with profile.
+func ProcessFile(profile config.ImageProcessingProfile) error {
 
-	// If profile name is empty, use `default``.
-	if profile_name == "" {
-		profile_name = "default"
+	working_image, err := profile.CreateImageFile()
+	if err != nil {
+		log.Printf("[x] Error while creating image: %v", err)
+		return err
 	}
 
-	profile_name = fmt.Sprintf("%s.yaml", profile_name) // Append `.yaml` extension.
-
-	home, err := os.UserHomeDir() // Get home directory.
-	if err != nil {
-		return "", err
-	}
-
-	profile_dir := filepath.Join(home, ".imgtools")                // Profile directory.
-	profile_file := filepath.Join(home, ".imgtools", profile_name) // Profile file.
-
-	_, err = os.Stat(profile_dir) // Check profile directory.
-	if err != nil {
-
-		// If directory not exists and create_dir is true, create directory.
-		if os.IsNotExist(err) {
-
-			if create_dir { // Making profile directory if not exists.
-				err = os.Mkdir(profile_dir, 0777)
-				if err != nil {
-					return "", err
-				}
-
-				// Writing default profile.
-				err = os.WriteFile(profile_file, []byte(config.GenerateDefaultConfig().ToYaml()), 0777)
-				if err != nil {
-					return "", err
-				}
-			} else { // If create_dir is false, return error.
-				return "", err
-			}
-		} else {
-			return "", err
+	// Create image processing pipeline.
+	for _, pb := range profile.PipelineBlocks {
+		// log.Printf("Processing Operation #%d: %s", index, pb.Operation)
+		working_image = working_image.Then(config.PipelineBlockToOperation(pb))
+		if working_image.LastError() != nil {
+			log.Printf("[x] Error while processing image: %v", working_image.LastError())
+			return working_image.LastError()
 		}
 	}
 
-	return profile_file, err
+	return nil
+}
+
+// Main worker.
+func mainWorker(ctx context.Context, profile config.ImageProcessingProfile, result_chan chan<- error) {
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	// Get only file name from the path.
+	input_image_name := profile.GetAssignedFilePath()
+	input_image_name = filepath.Base(input_image_name)
+
+	log.Printf("[.] Processing image [%s] with profile [%s]\n", input_image_name, profile.ProfileName)
+
+	// Process image.
+	for {
+		select {
+		case <-ctx.Done(): // Check if context is cancelled.
+			log.Printf("[!] Context cancelled. Exiting...\n")
+			result_chan <- nil
+			return // Terminate goroutine.
+		default:
+			err := ProcessFile(profile) // Process image.
+			if err != nil {
+				log.Printf("[x] Error while processing image: %v\n", err)
+				result_chan <- err
+				return // Terminate goroutine.
+			}
+			result_chan <- nil
+			return // Goroutine finished.
+		}
+	}
 }
